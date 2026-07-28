@@ -1,0 +1,30 @@
+package cmd
+
+import (
+	"io"
+
+	"github.com/spf13/cobra"
+)
+
+type CommandError struct {
+	error
+	ExitCode int
+}
+
+func NewRootCmd(out io.Writer, args []string) (*cobra.Command, error) {
+	cmd := &cobra.Command{
+		Use:          "sandbox",
+		Short:        "A lightweight isolation tool to run commands on isolated namespaces Resources",
+		SilenceUsage: true,
+	}
+
+	flags := cmd.PersistentFlags()
+	flags.Parse(args)
+
+	// Sub-commands registration
+	cmd.AddCommand(
+		newRunCommand(),
+	)
+
+	return cmd, nil
+}
