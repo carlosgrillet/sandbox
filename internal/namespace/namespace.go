@@ -1,6 +1,7 @@
 package namespace
 
 import (
+	"fmt"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -33,15 +34,28 @@ func RegisterNamespaceFlag(cmd *cobra.Command) {
 	}
 }
 
-func GetCloneFlags(cmd *cobra.Command) uintptr {
-	var flagsSum uintptr
+func GetCloneFlags(cmd *cobra.Command) (uintptr, error) {
+	all, err := cmd.Flags().GetBool("all")
+	if err != nil {
+		return 0, fmt.Errorf("get all flag: %w", err)
+	}
+
+	var cloneFlags uintptr
+
 	for _, ns := range namespaces {
-		// TODO: catch the error here
-		flag, _ := cmd.Flags().GetBool(ns.name)
-		if flag {
-			flagsSum = flagsSum | ns.cloneFlag
+		enabled := all
+
+		if !all {
+			enabled, err = cmd.Flags().GetBool(ns.name)
+			if err != nil {
+				return 0, fmt.Errorf("get %s flag: %w", ns.name, err)
+			}
+		}
+
+		if enabled {
+			cloneFlags |= ns.cloneFlag
 		}
 	}
 
-	return flagsSum
+	return cloneFlags, nil
 }

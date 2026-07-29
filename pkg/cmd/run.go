@@ -13,11 +13,13 @@ import (
 func newRunCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run [flags] EXECUTABLE",
-		Short: "run a new process",
+		Short: "run a new process with isolation on the selected namespaces",
 		RunE:  run,
 	}
 
 	namespace.RegisterNamespaceFlag(cmd)
+
+	cmd.Flags().BoolP("all", "A", false, "isolate all namespaces")
 
 	return cmd
 }
@@ -40,6 +42,10 @@ func run(cmd *cobra.Command, args []string) error {
 	//   - mount /proc for the new PID namespace
 	//   - execute the requested command
 
+	sysProcAttr, err := getSysProcAttr(cmd)
+	if err != nil {
+		return err
+	}
 
 	command := &exec.Cmd{
 		Path:        commandPath,
@@ -47,20 +53,27 @@ func run(cmd *cobra.Command, args []string) error {
 		Stdin:       os.Stdin,
 		Stdout:      os.Stdout,
 		Stderr:      os.Stderr,
-		SysProcAttr: getSysProcAttr(cmd),
+		SysProcAttr: sysProcAttr,
 	}
 
 	return command.Run()
 }
 
-func getSysProcAttr(cmd *cobra.Command) *syscall.SysProcAttr {
+func getSysProcAttr(cmd *cobra.Command) (*syscall.SysProcAttr, error) {
+	cloneFlags, err := namespace.GetCloneFlags(cmd)
+	if err != nil {
+		return nil, err
+	}
+
 	procAttr := &syscall.SysProcAttr{
-		Cloneflags: namespace.GetCloneFlags(cmd),
+		Cloneflags: cloneFlags,
 	}
 
 	// TODO: catch the error here
-	flag, _ := cmd.Flags().GetBool("user")
-	if flag {
+	user, _ := cmd.Flags().GetBool("user")
+	all, _ := cmd.Flags().GetBool("all")
+
+	if user || all {
 		procAttr.UidMappings = []syscall.SysProcIDMap{
 			{
 				ContainerID: 0,
@@ -76,5 +89,5 @@ func getSysProcAttr(cmd *cobra.Command) *syscall.SysProcAttr {
 			},
 		}
 	}
-	return procAttr
+	return procAttr, nil
 }

@@ -13,8 +13,8 @@ type CommandError struct {
 
 func NewRootCmd(out io.Writer, args []string) (*cobra.Command, error) {
 	cmd := &cobra.Command{
-		Use:          "sandbox",
-		Short:        "A lightweight isolation tool to run commands on isolated namespaces Resources",
+		Use:          "sb",
+		Short:        "A lightweight tool for running commands in isolated Linux namespaces",
 		SilenceUsage: true,
 	}
 
