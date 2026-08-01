@@ -4,6 +4,7 @@ project_name: sb
 
 before:
   hooks:
+    - make get-alpinefs
     - go mod tidy
     - go vet ./...
 
