@@ -25,6 +25,7 @@ func NewRootCmd(_ io.Writer, args []string) (*cobra.Command, error) {
 	cmd.AddCommand(
 		newInitCommand(),
 		newRunCommand(),
+		newVersionCommand(),
 	)
 
 	return cmd, nil

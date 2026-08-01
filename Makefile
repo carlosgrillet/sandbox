@@ -5,8 +5,17 @@ ASSETS      := $(shell find internal/rootfs/assets -type f 2>/dev/null)
 
 GOFLAGS     :=
 TAGS        :=
-LDFLAGS     := -w -s
 CGO_ENABLED ?= 0
+
+VERSION_PKG    := github.com/carlosgrillet/sandbox/internal/version
+VERSION        ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+GIT_COMMIT     := $(shell git rev-parse HEAD 2>/dev/null)
+GIT_TREE_STATE := $(shell test -z "$$(git status --porcelain 2>/dev/null)" && echo clean || echo dirty)
+
+LDFLAGS := -w -s \
+	-X '$(VERSION_PKG).version=$(VERSION)' \
+	-X '$(VERSION_PKG).gitCommit=$(GIT_COMMIT)' \
+	-X '$(VERSION_PKG).gitTreeState=$(GIT_TREE_STATE)'
 
 ALPINE_IMAGE ?= alpine:3.23.5
 ALPINE_DIR   ?= $(CURDIR)/alpinefs
