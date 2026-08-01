@@ -11,7 +11,7 @@ type CommandError struct {
 	ExitCode int
 }
 
-func NewRootCmd(out io.Writer, args []string) (*cobra.Command, error) {
+func NewRootCmd(_ io.Writer, args []string) (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:          "sb",
 		Short:        "A lightweight tool for running commands in isolated Linux namespaces",
@@ -23,6 +23,7 @@ func NewRootCmd(out io.Writer, args []string) (*cobra.Command, error) {
 
 	// Sub-commands registration
 	cmd.AddCommand(
+		newInitCommand(),
 		newRunCommand(),
 	)
 
