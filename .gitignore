@@ -4,3 +4,4 @@
 coverage.out
 sandbox.yaml
 alpinefs
+internal/rootfs/assets/*
