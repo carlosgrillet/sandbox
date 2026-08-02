@@ -1,3 +1,4 @@
+// Package cmd builds the sandbox cobra command tree.
 package cmd
 
 import (
@@ -6,11 +7,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// CommandError wraps an error with the process exit code it should produce.
 type CommandError struct {
 	error
 	ExitCode int
 }
 
+// NewRootCmd builds the "sandbox" root command and registers its sub-commands.
 func NewRootCmd(_ io.Writer, args []string) (*cobra.Command, error) {
 	cmd := &cobra.Command{
 		Use:          "sb",

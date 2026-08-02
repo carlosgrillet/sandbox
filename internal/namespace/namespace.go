@@ -1,3 +1,5 @@
+// Package namespace registers per-namespace cobra flags (--net, --pid, ...)
+// and translates the cobra flags into Linux clone(2) namespace flags.
 package namespace
 
 import (
@@ -7,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// namespace describes one Linux namespace exposed as a CLI flag.
 type namespace struct {
 	name         string
 	shorthand    string
@@ -15,8 +18,13 @@ type namespace struct {
 	cloneFlag    uintptr
 }
 
+// namespaces holds the set registered by RegisterNamespaceFlag; GetCloneFlags
+// reads it back, so RegisterNamespaceFlag must run first.
 var namespaces []namespace
 
+// RegisterNamespaceFlag adds one bool flag per supported namespace
+// (net, pid, uts, mnt, ipc, user, time, cgroup) to cmd, and populates the
+// package-level namespace table used by GetCloneFlags.
 func RegisterNamespaceFlag(cmd *cobra.Command) {
 	namespaces = []namespace{
 		{"net", "n", "isolate network namespace", false, syscall.CLONE_NEWNET},
@@ -34,6 +42,9 @@ func RegisterNamespaceFlag(cmd *cobra.Command) {
 	}
 }
 
+// GetCloneFlags reads the flags registered by RegisterNamespaceFlag off cmd
+// and ORs together the clone(2) flags for every enabled namespace. If the
+// "all" flag is set, every namespace is enabled regardless of its own flag.
 func GetCloneFlags(cmd *cobra.Command) (uintptr, error) {
 	all, err := cmd.Flags().GetBool("all")
 	if err != nil {

@@ -14,6 +14,8 @@ import (
 	"github.com/carlosgrillet/sandbox/internal/rootfs"
 )
 
+// newRunCommand builds the "run" sub-command, which executes a process in
+// the namespaces selected by --net/--pid/--uts/... (or --all).
 func newRunCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run [flags] EXECUTABLE",
@@ -30,6 +32,11 @@ func newRunCommand() *cobra.Command {
 	return cmd
 }
 
+// run is the RunE for "run". If the mnt namespace is requested it
+// materializes a rootfs and re-execs "/proc/self/exe __init ..." into it
+// (a new mount namespace only takes effect for a new process, not the
+// caller); otherwise it execs args[0] directly with the requested clone
+// flags.
 func run(cmd *cobra.Command, args []string) (runErr error) {
 	mountNamespace, err := namespaceEnabled(cmd, "mnt")
 	if err != nil {
@@ -42,7 +49,8 @@ func run(cmd *cobra.Command, args []string) (runErr error) {
 	}
 
 	if mountNamespace {
-		filesystem, err := rootfs.Materialize()
+		var filesystem *rootfs.RootFS
+		filesystem, err = rootfs.Materialize()
 		if err != nil {
 			return err
 		}
@@ -50,7 +58,8 @@ func run(cmd *cobra.Command, args []string) (runErr error) {
 			runErr = errors.Join(runErr, filesystem.Close())
 		}()
 
-		mountProc, err := namespaceEnabled(cmd, "pid")
+		var mountProc bool
+		mountProc, err = namespaceEnabled(cmd, "pid")
 		if err != nil {
 			return err
 		}
@@ -86,6 +95,9 @@ func run(cmd *cobra.Command, args []string) (runErr error) {
 	return command.Run()
 }
 
+// getSysProcAttr builds the SysProcAttr for the child process: clone flags
+// for the requested namespaces, plus a uid/gid mapping (root inside, current
+// user outside) when the user namespace is requested via --user or --all.
 func getSysProcAttr(cmd *cobra.Command) (*syscall.SysProcAttr, error) {
 	cloneFlags, err := namespace.GetCloneFlags(cmd)
 	if err != nil {
@@ -125,6 +137,8 @@ func getSysProcAttr(cmd *cobra.Command) (*syscall.SysProcAttr, error) {
 	return procAttr, nil
 }
 
+// namespaceEnabled reports whether the named namespace flag is set, treating
+// --all as enabling every namespace regardless of its individual flag.
 func namespaceEnabled(cmd *cobra.Command, name string) (bool, error) {
 	all, err := cmd.Flags().GetBool("all")
 	if err != nil {

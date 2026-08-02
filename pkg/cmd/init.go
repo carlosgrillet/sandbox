@@ -12,8 +12,14 @@ import (
 	"github.com/carlosgrillet/sandbox/internal/namespace"
 )
 
+// rootfsPath is the PATH set inside the materialized rootfs, since the
+// host's PATH doesn't apply once pivot_root has switched filesystems.
 const rootfsPath = "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
+// newInitCommand builds the hidden "__init" sub-command. It's not meant to
+// be invoked by users directly; "run" re-execs the binary with this
+// sub-command (via /proc/self/exe) to complete setup inside new namespaces.
+// See run.go's run function for why the re-exec is needed.
 func newInitCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:                "__init ROOTFS MOUNT_PROC EXECUTABLE [ARG...]",
@@ -24,6 +30,10 @@ func newInitCommand() *cobra.Command {
 	}
 }
 
+// runInit is the RunE for "__init". args is [rootfs, mountProc, executable,
+// arg...]: it enters the given rootfs via namespace.EnterRootFS, resets
+// PATH for the new filesystem, then replaces this process (syscall.Exec)
+// with the requested executable.
 func runInit(_ *cobra.Command, args []string) error {
 	mountProc, err := strconv.ParseBool(args[1])
 	if err != nil {

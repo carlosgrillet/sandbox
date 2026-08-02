@@ -8,6 +8,7 @@ import (
 	"github.com/carlosgrillet/sandbox/internal/version"
 )
 
+// newVersionCommand builds the "version" sub-command.
 func newVersionCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
@@ -16,6 +17,8 @@ func newVersionCommand() *cobra.Command {
 	}
 }
 
+// runVersion is the RunE for "version": prints the version, suffixed with
+// the short (7-char) git commit hash when available.
 func runVersion(_ *cobra.Command, _ []string) error {
 	v := version.Get()
 	out := v.Version

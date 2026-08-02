@@ -1,3 +1,4 @@
+// Command sb runs commands in isolated Linux namespaces.
 package main
 
 import (
