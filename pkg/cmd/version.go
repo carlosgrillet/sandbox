@@ -10,21 +10,32 @@ import (
 
 // newVersionCommand builds the "version" sub-command.
 func newVersionCommand() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "print the sb version information",
 		RunE:  runVersion,
 	}
+
+	cmd.Flags().Bool("short", false, "print short version")
+
+	return cmd
 }
 
 // runVersion is the RunE for "version": prints the version, suffixed with
 // the short (7-char) git commit hash when available.
-func runVersion(_ *cobra.Command, _ []string) error {
-	v := version.Get()
-	out := v.Version
-	if len(v.GitCommit) >= 7 {
-		out += "+" + v.GitCommit[:7]
+func runVersion(cmd *cobra.Command, _ []string) error {
+	versionInfo := version.Get()
+
+	short, err := cmd.Flags().GetBool("short")
+	if err != nil {
+		return err
 	}
-	fmt.Println(out)
+
+	if short {
+		fmt.Println(versionInfo.Version + "+" + versionInfo.GitCommit[:7])
+		return nil
+	}
+
+	fmt.Printf("%#v\n", versionInfo)
 	return nil
 }
